@@ -6,3 +6,7 @@
 sn.img
 log_*.txt
 platform-tools/
+*.apk
+*.zip
+*.img
+build/

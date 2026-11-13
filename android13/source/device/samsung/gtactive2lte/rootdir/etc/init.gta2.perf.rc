@@ -1,0 +1,82 @@
+# Galaxy Tab Active2: performance tuning (tested on device 2026-11-13)
+on boot
+    write /sys/block/zram0/comp_algorithm lz4
+    write /proc/sys/vm/swappiness 100
+    write /proc/sys/vm/page-cluster 0
+    write /proc/sys/vm/dirty_ratio 20
+    write /proc/sys/vm/dirty_background_ratio 5
+    write /proc/sys/vm/vfs_cache_pressure 80
+    write /sys/block/mmcblk0/queue/scheduler noop
+    write /sys/block/mmcblk0/queue/read_ahead_kb 512
+    write /sys/block/mmcblk0/queue/iostats 0
+
+on property:sys.boot_completed=1
+    swapon_all /vendor/etc/fstab.samsungexynos7870
+    # interactive governor, both clusters
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1248000
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 75
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 40000
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay 20000
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "70 1248000:80 1482000:90"
+    # all 8 cores (Samsung cpuhotplug kept cores 4-7 offline), unless the Battery profile wants hotplug
+    write /sys/power/cpuhotplug/enabled ${persist.sys.gta2.hotplug:-0}
+    write /sys/devices/system/cpu/cpu4/online 1
+    write /sys/devices/system/cpu/cpu5/online 1
+    write /sys/devices/system/cpu/cpu6/online 1
+    write /sys/devices/system/cpu/cpu7/online 1
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq 1248000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load 75
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate 20000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time 40000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay 20000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads "70 1248000:80 1482000:90"
+    # profile values (Performance app: org.gta2.perf). Defaults = Performance profile
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq ${persist.sys.gta2.cpu_min:-546000}
+    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq ${persist.sys.gta2.cpu_min:-546000}
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq ${persist.sys.gta2.cpu_max:-1690000}
+    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq ${persist.sys.gta2.cpu_max:-1690000}
+    write /sys/devices/11400000.mali/dvfs_governor ${persist.sys.gta2.gpu_gov:-3}
+    write /sys/devices/11400000.mali/dvfs_max_lock ${persist.sys.gta2.gpu_max:-1146}
+    write /sys/class/devfreq/17000010.devfreq_mif/min_freq ${persist.sys.gta2.mif_min:-902000}
+    write /sys/class/devfreq/17000020.devfreq_int/min_freq ${persist.sys.gta2.int_min:-400000}
+
+# live changes from the Performance app
+on property:persist.sys.gta2.hotplug=0
+    write /sys/power/cpuhotplug/enabled 0
+    write /sys/devices/system/cpu/cpu4/online 1
+    write /sys/devices/system/cpu/cpu5/online 1
+    write /sys/devices/system/cpu/cpu6/online 1
+    write /sys/devices/system/cpu/cpu7/online 1
+on property:persist.sys.gta2.hotplug=1
+    write /sys/power/cpuhotplug/enabled 1
+on property:persist.sys.gta2.cpu_min=*
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq ${persist.sys.gta2.cpu_min}
+    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq ${persist.sys.gta2.cpu_min}
+on property:persist.sys.gta2.cpu_max=*
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq ${persist.sys.gta2.cpu_max}
+    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq ${persist.sys.gta2.cpu_max}
+on property:persist.sys.gta2.gpu_gov=*
+    write /sys/devices/11400000.mali/dvfs_governor ${persist.sys.gta2.gpu_gov}
+on property:persist.sys.gta2.gpu_max=*
+    write /sys/devices/11400000.mali/dvfs_max_lock ${persist.sys.gta2.gpu_max}
+on property:persist.sys.gta2.mif_min=*
+    write /sys/class/devfreq/17000010.devfreq_mif/min_freq ${persist.sys.gta2.mif_min}
+on property:persist.sys.gta2.int_min=*
+    write /sys/class/devfreq/17000020.devfreq_int/min_freq ${persist.sys.gta2.int_min}
+
+# feature toggles from the Performance app
+on property:persist.sys.gta2.chg_limit=1
+    write /sys/class/power_supply/battery/store_mode 1
+on property:persist.sys.gta2.chg_limit=0
+    write /sys/class/power_supply/battery/store_mode 0
+on property:persist.sys.gta2.glove=1
+    write /sys/class/sec/tsp/cmd "glove_mode,1"
+on property:persist.sys.gta2.glove=0
+    write /sys/class/sec/tsp/cmd "glove_mode,0"
+on property:persist.sys.gta2.spk_ep=*
+    write /sys/module/snd_soc_cod3026/parameters/spk_ep ${persist.sys.gta2.spk_ep}
+on property:persist.sys.gta2.ep_boost=*
+    write /sys/module/snd_soc_cod3026/parameters/ep_boost ${persist.sys.gta2.ep_boost}
+
+# first-boot setup (taskbar off, Trebuchet home, debloat) is done by the Performance app (org.gta2.perf BootReceiver)

@@ -1,0 +1,44 @@
+android_app_import {
+    name: "GmsCore",
+    apk: "GmsCore.apk",
+    presigned: true,
+    privileged: true,
+    product_specific: true,
+    overrides: ["NetworkLocation"],
+    required: ["privapp-permissions-microg.xml", "sysconfig-microg.xml"],
+    dex_preopt: { enabled: false },
+}
+android_app_import {
+    name: "Companion",
+    apk: "Companion.apk",
+    presigned: true,
+    privileged: true,
+    product_specific: true,
+    dex_preopt: { enabled: false },
+}
+android_app_import {
+    name: "AuroraStore",
+    apk: "AuroraStore.apk",
+    presigned: true,
+    product_specific: true,
+    dex_preopt: { enabled: false },
+}
+android_app_import {
+    name: "OrionStore",
+    apk: "OrionStore.apk",
+    presigned: true,
+    product_specific: true,
+    dex_preopt: { enabled: false },
+}
+prebuilt_etc {
+    name: "privapp-permissions-microg.xml",
+    src: "privapp-permissions-microg.xml",
+    sub_dir: "permissions",
+    product_specific: true,
+}
+prebuilt_etc {
+    name: "sysconfig-microg.xml",
+    src: "sysconfig-microg.xml",
+    sub_dir: "sysconfig",
+    product_specific: true,
+}

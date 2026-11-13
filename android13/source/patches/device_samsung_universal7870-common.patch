@@ -1,0 +1,60 @@
+diff --git a/Android.mk b/Android.mk
+index 81449e2..d3e0aa8 100755
+--- a/Android.mk
++++ b/Android.mk
+@@ -16,7 +16,7 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter a3y17lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte, $(TARGET_DEVICE)),)
++ifneq ($(filter a3y17lte gtactive2lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte, $(TARGET_DEVICE)),)
+ 
+ include $(call all-makefiles-under,$(LOCAL_PATH))
+ include $(CLEAR_VARS)
+diff --git a/device-common.mk b/device-common.mk
+index f3b553b..f2789e2 100755
+--- a/device-common.mk
++++ b/device-common.mk
+@@ -294,7 +294,7 @@ PRODUCT_PACKAGES += \
+ 
+ # Touch features
+ PRODUCT_PACKAGES += \
+-    vendor.lineage.touch@1.0-service.exynos7870
++    # vendor.lineage.touch@1.0-service.exynos7870  (disabled for gtactive2lte: IKeyDisabler watchdog loop)
+ 
+ # FlipFlap
+ PRODUCT_PACKAGES += \
+diff --git a/rootdir/Android.mk b/rootdir/Android.mk
+index f86aa9b..5769f2d 100755
+--- a/rootdir/Android.mk
++++ b/rootdir/Android.mk
+@@ -14,6 +14,7 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
++ifneq ($(TARGET_DEVICE_HAS_OWN_FSTAB),true)
+ include $(CLEAR_VARS)
+ LOCAL_MODULE       := fstab.samsungexynos7870
+ LOCAL_MODULE_TAGS  := optional
+@@ -21,6 +22,7 @@ LOCAL_MODULE_CLASS := ETC
+ LOCAL_SRC_FILES    := etc/fstab.samsungexynos7870
+ LOCAL_MODULE_PATH  := $(TARGET_OUT_VENDOR_ETC)
+ include $(BUILD_PREBUILT)
++endif
+ 
+ include $(CLEAR_VARS)
+ LOCAL_MODULE       := init.baseband.rc
+diff --git a/vendor_prop.mk b/vendor_prop.mk
+index 6126307..1eacd88 100755
+--- a/vendor_prop.mk
++++ b/vendor_prop.mk
+@@ -110,6 +110,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
+ 
+ # Blur
+ PRODUCT_PROPERTY_OVERRIDES += \
+-   ro.surface_flinger.supports_background_blur=1 \
+-   persist.sys.sf.disable_blurs=0 \
+-   ro.sf.blurs_are_expensive=0
++   ro.surface_flinger.supports_background_blur=0 \
++   persist.sys.sf.disable_blurs=1 \
++   ro.sf.blurs_are_expensive=1

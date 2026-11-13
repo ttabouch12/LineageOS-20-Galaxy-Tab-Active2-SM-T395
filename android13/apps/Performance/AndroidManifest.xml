@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.gta2.perf"
+    android:sharedUserId="android.uid.system"
+    android:versionCode="2" android:versionName="2.0">
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <application android:label="Performance" android:theme="@android:style/Theme.DeviceDefault"
+        android:icon="@android:drawable/ic_menu_manage" android:persistent="true">
+        <activity android:name=".MainActivity" android:exported="true" android:label="Performance">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <service android:name=".PerAppService" android:exported="false" />
+        <service android:name=".ProfileTile" android:exported="true" android:label="Performance"
+            android:icon="@android:drawable/ic_menu_manage"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <receiver android:name=".BootReceiver" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter>
+        </receiver>
+    </application>
+</manifest>

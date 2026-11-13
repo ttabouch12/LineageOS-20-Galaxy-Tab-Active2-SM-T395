@@ -1,0 +1,359 @@
+diff --git a/core/api/current.txt b/core/api/current.txt
+index 487e57d1..04e69741 100644
+--- a/core/api/current.txt
++++ b/core/api/current.txt
+@@ -87,6 +87,7 @@ package android {
+     field public static final String DUMP = "android.permission.DUMP";
+     field public static final String EXPAND_STATUS_BAR = "android.permission.EXPAND_STATUS_BAR";
+     field public static final String FACTORY_TEST = "android.permission.FACTORY_TEST";
++    field public static final String FAKE_PACKAGE_SIGNATURE = "android.permission.FAKE_PACKAGE_SIGNATURE";
+     field public static final String FOREGROUND_SERVICE = "android.permission.FOREGROUND_SERVICE";
+     field public static final String GET_ACCOUNTS = "android.permission.GET_ACCOUNTS";
+     field public static final String GET_ACCOUNTS_PRIVILEGED = "android.permission.GET_ACCOUNTS_PRIVILEGED";
+@@ -222,6 +223,7 @@ package android {
+     field public static final String CALL_LOG = "android.permission-group.CALL_LOG";
+     field public static final String CAMERA = "android.permission-group.CAMERA";
+     field public static final String CONTACTS = "android.permission-group.CONTACTS";
++    field public static final String FAKE_PACKAGE = "android.permission-group.FAKE_PACKAGE";
+     field public static final String LOCATION = "android.permission-group.LOCATION";
+     field public static final String MICROPHONE = "android.permission-group.MICROPHONE";
+     field public static final String NEARBY_DEVICES = "android.permission-group.NEARBY_DEVICES";
+diff --git a/core/res/AndroidManifest.xml b/core/res/AndroidManifest.xml
+index bbc3a736..856ab3ad 100644
+--- a/core/res/AndroidManifest.xml
++++ b/core/res/AndroidManifest.xml
+@@ -3577,6 +3577,21 @@
+         android:description="@string/permdesc_getPackageSize"
+         android:protectionLevel="normal" />
+ 
++    <!-- Dummy user-facing group for faking package signature -->
++    <permission-group android:name="android.permission-group.FAKE_PACKAGE"
++        android:label="@string/permgrouplab_fake_package_signature"
++        android:description="@string/permgroupdesc_fake_package_signature"
++        android:request="@string/permgrouprequest_fake_package_signature"
++        android:priority="100" />
++
++    <!-- Allows an application to change the package signature as
++         seen by applications -->
++    <permission android:name="android.permission.FAKE_PACKAGE_SIGNATURE"
++        android:permissionGroup="android.permission-group.UNDEFINED"
++        android:protectionLevel="dangerous"
++        android:label="@string/permlab_fakePackageSignature"
++        android:description="@string/permdesc_fakePackageSignature" />
++
+     <!-- @deprecated No longer useful, see
+          {@link android.content.pm.PackageManager#addPackageToPreferred}
+          for details. -->
+diff --git a/core/res/res/values/strings.xml b/core/res/res/values/strings.xml
+index 2091c050..6888edcf 100644
+--- a/core/res/res/values/strings.xml
++++ b/core/res/res/values/strings.xml
+@@ -982,6 +982,18 @@
+ 
+     <!--  Permissions -->
+ 
++    <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
++    <string name="permlab_fakePackageSignature">Spoof package signature</string>
++    <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
++    <string name="permdesc_fakePackageSignature">Allows the app to pretend to be a different app. Malicious applications might be able to use this to access private application data. Legitimate uses include an emulator pretending to be what it emulates. Grant this permission with caution only!</string>
++    <!-- Title of a category of application permissions, listed so the user can choose whether they want to allow the application to do this. -->
++    <string name="permgrouplab_fake_package_signature">Spoof package signature</string>
++    <!-- Description of a category of application permissions, listed so the user can choose whether they want to allow the application to do this. -->
++    <string name="permgroupdesc_fake_package_signature">allow to spoof package signature</string>
++    <!-- Message shown to the user when the apps requests permission from this group. If ever possible this should stay below 80 characters (assuming the parameters takes 20 characters). Don't abbreviate until the message reaches 120 characters though. [CHAR LIMIT=120] -->
++    <string name="permgrouprequest_fake_package_signature">Allow
++        &lt;b><xliff:g id="app_name" example="Gmail">%1$s</xliff:g>&lt;/b> to spoof package signature?</string>
++
+     <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+     <string name="permlab_statusBar">disable or modify status bar</string>
+     <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+diff --git a/location/java/android/location/Location.java b/location/java/android/location/Location.java
+index 033056cb..09781dd9 100644
+--- a/location/java/android/location/Location.java
++++ b/location/java/android/location/Location.java
+@@ -262,7 +262,14 @@ public class Location implements Parcelable {
+      * @return the Unix epoch time of this location
+      */
+     public @IntRange(from = 0) long getTime() {
+-        return mTimeMs;
++        long gpsTime = mTimeMs;
++
++        // Adding 1024 weeks for chips with GPS Week Number Rollover issue
++        // 1024 * 7 * 24 * 60 * 60 * 1000 = 619315200000L
++        if ((gpsTime > 0) && (gpsTime < 1546300800000L))
++            gpsTime += 619315200000L;
++
++        return gpsTime;
+     }
+ 
+     /**
+diff --git a/packages/SystemUI/src/com/android/keyguard/KeyguardUpdateMonitor.java b/packages/SystemUI/src/com/android/keyguard/KeyguardUpdateMonitor.java
+index e154695e..e960201a 100644
+--- a/packages/SystemUI/src/com/android/keyguard/KeyguardUpdateMonitor.java
++++ b/packages/SystemUI/src/com/android/keyguard/KeyguardUpdateMonitor.java
+@@ -335,6 +335,7 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+             mCallbacks = Lists.newArrayList();
+     private ContentObserver mDeviceProvisionedObserver;
+     private final ContentObserver mTimeFormatChangeObserver;
++    private ContentObserver mSettingsChangeObserver;
+ 
+     private boolean mSwitchingUser;
+ 
+@@ -376,6 +377,8 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+     private int mPostureState = DEVICE_POSTURE_UNKNOWN;
+     private FingerprintInteractiveToAuthProvider mFingerprintInteractiveToAuthProvider;
+ 
++    private boolean mFingerprintWakeAndUnlock;
++
+     /**
+      * Short delay before restarting fingerprint authentication after a successful try. This should
+      * be slightly longer than the time between onFingerprintAuthenticated and
+@@ -2183,6 +2186,8 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+                 R.integer.config_face_auth_supported_posture);
+         mFaceWakeUpTriggersConfig = faceWakeUpTriggersConfig;
+ 
++        updateFingerprintSettings();
++
+         mHandler = new Handler(mainLooper) {
+             @Override
+             public void handleMessage(Message msg) {
+@@ -2408,6 +2413,28 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+                 false, mTimeFormatChangeObserver, UserHandle.USER_ALL);
+ 
+         mFingerprintInteractiveToAuthProvider = interactiveToAuthProvider.orElse(null);
++
++        mSettingsChangeObserver = new ContentObserver(mHandler) {
++            @Override
++            public void onChange(boolean selfChange) {
++                updateFingerprintSettings();
++            }
++        };
++        mContext.getContentResolver().registerContentObserver(
++                Settings.Secure.getUriFor(Settings.Secure.SFPS_PERFORMANT_AUTH_ENABLED),
++                false, mSettingsChangeObserver, UserHandle.USER_ALL);
++    }
++
++    private void updateFingerprintSettings() {
++        boolean defFingerprintSettings = mContext.getResources().getBoolean(
++                org.lineageos.platform.internal.R.bool.config_fingerprintWakeAndUnlock);
++        if (defFingerprintSettings) {
++            mFingerprintWakeAndUnlock = Settings.Secure.getIntForUser(mContext.getContentResolver(),
++                    Settings.Secure.SFPS_PERFORMANT_AUTH_ENABLED,
++                    1, UserHandle.USER_CURRENT) == 1;
++        } else {
++            mFingerprintWakeAndUnlock = defFingerprintSettings;
++        }
+     }
+ 
+     private void initializeSimState() {
+@@ -2805,7 +2832,18 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+         final int user = getCurrentUser();
+         final boolean userDoesNotHaveTrust = !getUserHasTrust(user);
+         final boolean shouldListenForFingerprintAssistant = shouldListenForFingerprintAssistant();
+-        final boolean shouldListenKeyguardState =
++        final boolean shouldListenKeyguardState;
++        if (!mFingerprintWakeAndUnlock) {
++            shouldListenKeyguardState =
++                (isKeyguardVisible()
++                        || mPrimaryBouncerIsOrWillBeShowing
++                        || shouldListenForFingerprintAssistant
++                        || (mKeyguardOccluded && mIsDreaming))
++                        && mDeviceInteractive && !mGoingToSleep && !mKeyguardGoingAway
++                        || (mKeyguardOccluded && userDoesNotHaveTrust
++                            && (mOccludingAppRequestingFp || isUdfps || mAlternateBouncerShowing));
++        } else {
++            shouldListenKeyguardState =
+                 isKeyguardVisible()
+                         || !mDeviceInteractive
+                         || (mPrimaryBouncerIsOrWillBeShowing && !mKeyguardGoingAway)
+@@ -2814,6 +2852,7 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+                         || (mKeyguardOccluded && mIsDreaming)
+                         || (mKeyguardOccluded && userDoesNotHaveTrust
+                             && (mOccludingAppRequestingFp || isUdfps || mAlternateBouncerShowing));
++        }
+ 
+         // Only listen if this KeyguardUpdateMonitor belongs to the primary user. There is an
+         // instance of KeyguardUpdateMonitor for each user but KeyguardUpdateMonitor is user-aware.
+@@ -4022,6 +4061,10 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
+             mContext.getContentResolver().unregisterContentObserver(mTimeFormatChangeObserver);
+         }
+ 
++        if (mSettingsChangeObserver != null) {
++            mContext.getContentResolver().unregisterContentObserver(mSettingsChangeObserver);
++        }
++
+         mUserTracker.removeCallback(mUserChangedCallback);
+ 
+         TaskStackChangeListeners.getInstance().unregisterTaskStackListener(mTaskStackListener);
+diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/FingerprintInteractiveToAuthProviderImpl.java b/packages/SystemUI/src/com/android/systemui/biometrics/FingerprintInteractiveToAuthProviderImpl.java
+deleted file mode 100644
+index 08780793..00000000
+--- a/packages/SystemUI/src/com/android/systemui/biometrics/FingerprintInteractiveToAuthProviderImpl.java
++++ /dev/null
+@@ -1,47 +0,0 @@
+-/*
+- * Copyright (C) 2023 ArrowOS
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.systemui.biometrics;
+-
+-import android.content.Context;
+-import android.provider.Settings;
+-
+-import javax.inject.Inject;
+-
+-public class FingerprintInteractiveToAuthProviderImpl implements
+-        FingerprintInteractiveToAuthProvider {
+-
+-    private final Context mContext;
+-    private final int mDefaultValue;
+-
+-    @Inject
+-    public FingerprintInteractiveToAuthProviderImpl(Context context) {
+-        mContext = context;
+-        mDefaultValue = context.getResources().getBoolean(
+-                org.lineageos.platform.internal.R.bool.config_fingerprintWakeAndUnlock) ? 1 : 0;
+-    }
+-
+-    public boolean isEnabled(int userId) {
+-        int value = Settings.Secure.getIntForUser(mContext.getContentResolver(),
+-                Settings.Secure.SFPS_PERFORMANT_AUTH_ENABLED, -1, userId);
+-        if (value == -1) {
+-            value = mDefaultValue;
+-            Settings.Secure.putIntForUser(mContext.getContentResolver(),
+-                    Settings.Secure.SFPS_PERFORMANT_AUTH_ENABLED, value, userId);
+-        }
+-        return value == 0;
+-    }
+-}
+diff --git a/packages/SystemUI/src/com/android/systemui/biometrics/dagger/BiometricsModule.kt b/packages/SystemUI/src/com/android/systemui/biometrics/dagger/BiometricsModule.kt
+index a5828f70..b5d81f25 100644
+--- a/packages/SystemUI/src/com/android/systemui/biometrics/dagger/BiometricsModule.kt
++++ b/packages/SystemUI/src/com/android/systemui/biometrics/dagger/BiometricsModule.kt
+@@ -16,10 +16,7 @@
+ 
+ package com.android.systemui.biometrics.dagger
+ 
+-import android.content.Context
+ import com.android.systemui.dagger.SysUISingleton
+-import com.android.systemui.biometrics.FingerprintInteractiveToAuthProvider
+-import com.android.systemui.biometrics.FingerprintInteractiveToAuthProviderImpl
+ import com.android.systemui.util.concurrency.ThreadFactory
+ import dagger.Module
+ import dagger.Provides
+@@ -39,10 +36,6 @@ object BiometricsModule {
+     @BiometricsBackground
+     fun providesPluginExecutor(threadFactory: ThreadFactory): Executor =
+         threadFactory.buildExecutorOnNewThread("biometrics")
+-
+-    @Provides
+-    fun providesFingerprintInteractiveToAuth(ctx: Context): FingerprintInteractiveToAuthProvider =
+-        FingerprintInteractiveToAuthProviderImpl(ctx);
+ }
+ 
+ /**
+diff --git a/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java b/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
+index cfda8be5..b8d96f77 100644
+--- a/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
++++ b/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
+@@ -148,7 +148,7 @@ public class ScreenMediaRecorder extends MediaProjection.Callback {
+                 * VIDEO_FRAME_RATE_TO_RESOLUTION_RATIO;
+         mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+         mMediaRecorder.setVideoEncodingProfileLevel(
+-                MediaCodecInfo.CodecProfileLevel.AVCProfileMain,
++                MediaCodecInfo.CodecProfileLevel.AVCProfileHigh,
+                 MediaCodecInfo.CodecProfileLevel.AVCLevel3);
+         mMediaRecorder.setVideoSize(width, height);
+         mMediaRecorder.setVideoFrameRate(refreshRate);
+diff --git a/services/core/java/com/android/server/pm/ComputerEngine.java b/services/core/java/com/android/server/pm/ComputerEngine.java
+index 1578ee00..942b5acf 100644
+--- a/services/core/java/com/android/server/pm/ComputerEngine.java
++++ b/services/core/java/com/android/server/pm/ComputerEngine.java
+@@ -1658,6 +1658,29 @@ public class ComputerEngine implements Computer {
+         return Optional.of(fakeSignature);
+     }
+ 
++    private boolean requestsFakeSignature(AndroidPackage p) {
++        return p.getMetaData() != null &&
++                p.getMetaData().getString("fake-signature") != null;
++    }
++
++    private PackageInfo mayFakeSignature(AndroidPackage p, PackageInfo pi,
++            Set<String> permissions) {
++        try {
++            if (p.getMetaData() != null &&
++                    p.getTargetSdkVersion() > Build.VERSION_CODES.LOLLIPOP_MR1) {
++                String sig = p.getMetaData().getString("fake-signature");
++                if (sig != null &&
++                        permissions.contains("android.permission.FAKE_PACKAGE_SIGNATURE")) {
++                    pi.signatures = new Signature[] {new Signature(sig)};
++                }
++            }
++        } catch (Throwable t) {
++            // We should never die because of any failures, this is system code!
++            Log.w("PackageManagerService.FAKE_PACKAGE_SIGNATURE", t);
++        }
++        return pi;
++    }
++
+     public final PackageInfo generatePackageInfo(PackageStateInternal ps,
+             @PackageManager.PackageInfoFlagsBits long flags, int userId) {
+         if (!mUserManager.exists(userId)) return null;
+@@ -1687,13 +1710,15 @@ public class ComputerEngine implements Computer {
+             final int[] gids = (flags & PackageManager.GET_GIDS) == 0 ? EMPTY_INT_ARRAY
+                     : mPermissionManager.getGidsForUid(UserHandle.getUid(userId, ps.getAppId()));
+             // Compute granted permissions only if package has requested permissions
+-            final Set<String> permissions = ((flags & PackageManager.GET_PERMISSIONS) == 0
++            final Set<String> permissions = (((flags & PackageManager.GET_PERMISSIONS) == 0
++                        && !requestsFakeSignature(p))
+                     || ArrayUtils.isEmpty(p.getRequestedPermissions())) ? Collections.emptySet()
+                     : mPermissionManager.getGrantedPermissions(ps.getPackageName(), userId);
+ 
+-            PackageInfo packageInfo = PackageInfoUtils.generate(p, gids, flags,
++            PackageInfo packageInfo = mayFakeSignature(p, PackageInfoUtils.generate(p, gids, flags,
+                     state.getFirstInstallTime(), ps.getLastUpdateTime(), permissions, state, userId,
+-                    ps);
++                    ps),
++                    permissions);
+ 
+             if (packageInfo == null) {
+                 return null;
+diff --git a/services/core/java/com/android/server/wm/ActivityTaskManagerService.java b/services/core/java/com/android/server/wm/ActivityTaskManagerService.java
+index dec16ec0..25f75759 100644
+--- a/services/core/java/com/android/server/wm/ActivityTaskManagerService.java
++++ b/services/core/java/com/android/server/wm/ActivityTaskManagerService.java
+@@ -5929,20 +5929,8 @@ public class ActivityTaskManagerService extends IActivityTaskManager.Stub {
+                 }
+ 
+                 if (!Build.isBuildConsistent()) {
+-                    Slog.e(TAG, "Build fingerprint is not consistent, warning user");
+-                    mUiHandler.post(() -> {
+-                        if (mShowDialogs) {
+-                            AlertDialog d = new BaseErrorDialog(mUiContext);
+-                            d.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ERROR);
+-                            d.setCancelable(false);
+-                            d.setTitle(mUiContext.getText(R.string.android_system_label));
+-                            d.setMessage(mUiContext.getText(R.string.system_error_manufacturer));
+-                            d.setButton(DialogInterface.BUTTON_POSITIVE,
+-                                    mUiContext.getText(R.string.ok),
+-                                    mUiHandler.obtainMessage(DISMISS_DIALOG_UI_MSG, d));
+-                            d.show();
+-                        }
+-                    });
++                    Slog.e(TAG, "Build fingerprint is not consistent");
++                    // Do not emit warning about vendor mismatch
+                 }
+             }
+         }

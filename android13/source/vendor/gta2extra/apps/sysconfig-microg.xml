@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+    <allow-in-power-save package="com.google.android.gms" />
+    <allow-in-data-usage-save package="com.google.android.gms" />
+    <allow-unthrottled-location package="com.google.android.gms" />
+    <allow-ignore-location-settings package="com.google.android.gms" />
+    <allow-implicit-broadcast action="com.google.android.c2dm.intent.RECEIVE" />
+    <allow-implicit-broadcast action="com.google.android.c2dm.intent.REGISTRATION" />
+</config>

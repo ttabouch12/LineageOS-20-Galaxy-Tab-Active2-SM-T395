@@ -1,0 +1,143 @@
+diff --git a/Android.mk b/Android.mk
+index 890deae..e941cd5 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -4,7 +4,7 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter a3y17lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
++ifneq ($(filter a3y17lte gtactive2lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
+ 
+ ###############################
+ # CUSTOM PART START EXYNOS7870#
+diff --git a/audio/sec/Android.mk b/audio/sec/Android.mk
+index 5bbb6bf..b50b020 100644
+--- a/audio/sec/Android.mk
++++ b/audio/sec/Android.mk
+@@ -4,6 +4,6 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter a3y17lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
++ifneq ($(filter a3y17lte gtactive2lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
+ 
+ endif
+diff --git a/audio/sec_tfa/Android.mk b/audio/sec_tfa/Android.mk
+index 1384a0a..554179c 100644
+--- a/audio/sec_tfa/Android.mk
++++ b/audio/sec_tfa/Android.mk
+@@ -4,6 +4,6 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter a3y17lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
++ifneq ($(filter a3y17lte gtactive2lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
+ 
+ endif
+diff --git a/drm/Android.mk b/drm/Android.mk
+index 259d04d..1f87229 100644
+--- a/drm/Android.mk
++++ b/drm/Android.mk
+@@ -4,6 +4,6 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter a3y17lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
++ifneq ($(filter a3y17lte gtactive2lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
+ 
+ endif
+diff --git a/gnss/Android.mk b/gnss/Android.mk
+index 54c0992..9829381 100644
+--- a/gnss/Android.mk
++++ b/gnss/Android.mk
+@@ -4,6 +4,6 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter a3y17lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
++ifneq ($(filter a3y17lte gtactive2lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
+ 
+ endif
+diff --git a/media/Android.mk b/media/Android.mk
+index 9b28d9b..3df4f4a 100644
+--- a/media/Android.mk
++++ b/media/Android.mk
+@@ -4,6 +4,6 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter a3y17lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
++ifneq ($(filter a3y17lte gtactive2lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
+ 
+ endif
+diff --git a/radio/Android.bp b/radio/Android.bp
+index 438a787..37bed52 100644
+--- a/radio/Android.bp
++++ b/radio/Android.bp
+@@ -59,7 +59,7 @@ cc_prebuilt_library_shared {
+ 			srcs: ["proprietary/vendor/lib64/libsec-ril-dsds.so"],
+ 		},
+ 	},
+-	compile_multilib: "both",
++	compile_multilib: "64",
+ 	check_elf_files: false,
+ 	prefer: true,
+ 	soc_specific: true,
+@@ -79,7 +79,7 @@ cc_prebuilt_library_shared {
+ 			srcs: ["proprietary/vendor/lib64/libsec-ril.so"],
+ 		},
+ 	},
+-	compile_multilib: "both",
++	compile_multilib: "64",
+ 	check_elf_files: false,
+ 	prefer: true,
+ 	soc_specific: true,
+diff --git a/radio/Android.mk b/radio/Android.mk
+index 0b6c0f2..113a144 100644
+--- a/radio/Android.mk
++++ b/radio/Android.mk
+@@ -4,6 +4,6 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter a3y17lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
++ifneq ($(filter a3y17lte gtactive2lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
+ 
+ endif
+diff --git a/samsung-slsi/Android.mk b/samsung-slsi/Android.mk
+index e268242..ad9eb32 100644
+--- a/samsung-slsi/Android.mk
++++ b/samsung-slsi/Android.mk
+@@ -4,6 +4,6 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter a3y17lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
++ifneq ($(filter a3y17lte gtactive2lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
+ 
+ endif
+diff --git a/secapp/Android.mk b/secapp/Android.mk
+index fa6a68e..995132e 100644
+--- a/secapp/Android.mk
++++ b/secapp/Android.mk
+@@ -4,6 +4,6 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter a3y17lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
++ifneq ($(filter a3y17lte gtactive2lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
+ 
+ endif
+diff --git a/sensors/Android.mk b/sensors/Android.mk
+index e8d3595..21e2523 100644
+--- a/sensors/Android.mk
++++ b/sensors/Android.mk
+@@ -4,6 +4,6 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter a3y17lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
++ifneq ($(filter a3y17lte gtactive2lte j5y17lte a6lte j6lte j7velte j7xelte j7y17lte on7xelte m10lte j7popelteskt,$(TARGET_DEVICE)),)
+ 
+ endif

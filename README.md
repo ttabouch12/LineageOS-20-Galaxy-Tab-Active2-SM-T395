@@ -4,7 +4,7 @@ Community ports for the Galaxy Tab Active2 LTE (Exynos 7870, Mali-T830, 3 GB RAM
 
 | Folder | What | Status |
 | --- | --- | --- |
-| [`android13/`](android13/) | LineageOS 20 (Android 13), 64-bit, microG, Aurora/Orion Store, Magisk-ready | 🚧 first build in progress, see that folder |
+| [`android13/`](android13/) | LineageOS 20 (Android 13), 64-bit, microG, Aurora/Orion Store, Magisk-ready, tested CPU 1794 / GPU 1300 MHz overclock, Performance app, F2FS | ✅ daily-usable, zip in [Releases](../../releases) |
 | [`postmarketos/`](postmarketos/) | postmarketOS + U-Boot on the mainline Exynos 7870 kernel | 🧪 boots to console; USB networking not working yet |
 
 Everything uses the **stock partition table**, so flashing the stock Samsung
