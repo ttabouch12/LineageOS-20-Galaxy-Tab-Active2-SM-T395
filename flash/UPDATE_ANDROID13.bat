@@ -5,7 +5,7 @@ cd /d "%~dp0"
 set ADB=%USERPROFILE%\Downloads\Legion-ZUXOS-Lite\platform-tools\adb.exe
 if not exist "%ADB%" set ADB=adb
 set LOG=%~dp0log_update_android13.txt
-set ZIP=lineage-20.0-20261113-gtactive2lte-OC-FINAL.zip
+set ZIP=lineage-20.0-20261114-gtactive2lte-OC2.zip
 echo ==== %date% %time% ==== > "%LOG%"
 if not exist "%ZIP%" ( echo %ZIP% not found next to this script. & pause & exit /b 1 )
 echo Update: %ZIP%   (your apps and data are kept)

@@ -80,3 +80,12 @@ on property:persist.sys.gta2.ep_boost=*
     write /sys/module/snd_soc_cod3026/parameters/ep_boost ${persist.sys.gta2.ep_boost}
 
 # first-boot setup (taskbar off, Trebuchet home, debloat) is done by the Performance app (org.gta2.perf BootReceiver)
+
+# cpusets (kernel with CONFIG_CPUSETS): keep background work on cores 0-2
+on boot
+    write /dev/cpuset/top-app/cpus 0-7
+    write /dev/cpuset/foreground/cpus 0-2,4-7
+    write /dev/cpuset/background/cpus 0-2
+    write /dev/cpuset/system-background/cpus 0-2
+    write /dev/cpuset/restricted/cpus 0-3
+    write /dev/cpuset/camera-daemon/cpus 0-7

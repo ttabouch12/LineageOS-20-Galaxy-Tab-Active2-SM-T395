@@ -3,10 +3,36 @@
 Unofficial LineageOS 20 for `gtactive2lte`, tuned for speed on the Exynos 7870, with a tested
 CPU/GPU overclock, a built-in **Performance** app and a long list of hardware fixes.
 
-**Download:** see [Releases](../../releases) → `lineage-20.0-20261113-gtactive2lte-OC-FINAL.zip` (+ `.md5sum`).
+**Download:** see [Releases](../../releases) → latest `lineage-20.0-20261114-gtactive2lte-OC2.zip` (+ `.md5sum`).
 
 > Also for this tablet: **[postmarketOS port](https://github.com/ttabouch12/postmarketOS-Galaxy-Tab-Active2-SM-T395)** (mainline Linux, experimental).
 > Stock firmware to go back: [SamFw](https://samfw.com/firmware/SM-T395) (flash with Odin).
+
+## OC2 (2026-11-14): kernel rebase + deep tuning, benchmarked
+
+**Kernel now based on samsungexynos7870 `lineage-22.2`** (commit `b7d1df08`, +1,243 commits over lineage-20), with this ROM's patches on top
+(`source/patches/kernel_samsung_exynos7870-on-lineage-22.2.patch`; the old lineage-20 patch is kept as `legacy_...`). It brings and enables:
+- **PSI** with the in-kernel low-memory killer removed, so Android 13's lmkd runs in PSI mode (`ro.lmk.use_psi=true`)
+- **zram**: per-CPU streams (8 instead of 1), new zsmalloc and LZ4, ZSTD available, no vnswap
+- **cpusets**: background work on cores 0-2, foreground app on all 8 cores
+- Exynos snapshot IRQ/hook tracing off
+- **GPU DVFS fix**: the 1146-1300 MHz steps had 98/100 % thresholds, so the governor never climbed past 1001 MHz; now graded 70/90 to 85/100 and the high-speed jump goes to 1001 MHz. Under load the GPU now holds 1246-1300 MHz.
+
+Userspace (tested one by one, kept only what helped):
+- GLES RenderEngine, triple buffering, `dex2oat-threads=4`, traced off, 20 cached apps, USAP pool
+- power HAL touch boost on both CPU clusters (1248 MHz) and launch boost (1586 MHz for 5 s)
+- `debug.sf.enable_gl_backpressure` was tested and **rejected**: it made the launcher worse
+
+UI benchmark (Performance profile; launcher swipes, Settings scroll, notification shade, cold starts):
+
+| | before | OC2 |
+|---|---|---|
+| launcher jank / p99 | 8.95 % / 46 ms | 5.5-6.2 % / 40 ms |
+| notification shade p99 | 105 ms | 48-53 ms |
+| Settings cold start | ~940 ms | ~740 ms |
+
+Researched but skipped as placebo or not applicable here: eMMC "CRC off" tweaks, simple_lmk, extra CPU governors,
+DECON partial update (video-mode panel), Vulkan as default renderer.
 
 ## Status
 
