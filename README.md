@@ -8,6 +8,40 @@ CPU/GPU overclock, a built-in **Performance** app and a long list of hardware fi
 > Also for this tablet: **[postmarketOS port](https://github.com/ttabouch12/postmarketOS-Galaxy-Tab-Active2-SM-T395)** (mainline Linux, experimental).
 > Stock firmware to go back: [SamFw](https://samfw.com/firmware/SM-T395) (flash with Odin).
 
+## OC3 (2026-11-14): kernel build + scheduler/memory tuning, benchmarked
+
+Zip: `lineage-20.0-20261114-gtactive2lte-OC3.zip` (release tag `v20.0-oc3-20261114`).
+
+**Kernel** (LineageOS 22.2 exynos7870 base, Linux 3.18.140):
+- built with GCC 4.9 at **-O2** (was -Os), **CONFIG_HZ=300** (was 100)
+- Samsung debug/log overhead reduced: `MMC_DW_DEBUG`, `CGROUP_DEBUG`, `DETECT_HUNG_TASK` off; Exynos-snapshot freq/clk/regulator/thermal/SMC logging off
+- PSI + cpusets + per-CPU zram with LZ4 (8 streams); in-kernel LMK replaced by PSI lmkd
+- OC kept: CPU **1794 MHz @ 1.0875 V**, GPU **1300 MHz @ 1.0625 V**, GPU DVFS thresholds retuned
+
+**Userspace:**
+- ART heap tuned for 3 GB: `heapminfree=2m`, `heapmaxfree=16m`, `heaptargetutilization=0.7`
+- dex2oat pinned to cores 1,2,3,5,6; apps fully compiled on install (`pm.dexopt.install=speed`)
+- dirty writeback capped (16 MB background / 64 MB)
+- background and system-background cpusets moved off CPU0 (cores 1-3); foreground on 1-7
+- camera app no longer pinned in RAM (`pinner.pin_camera=false`)
+- power HAL INTERACTION/LAUNCH boosts on both clusters
+
+**Tested and rejected** (made frame times worse): HWUI buffer-age partial redraw, SurfaceFlinger layer caching, GL backpressure.
+**Investigated and dropped:** Mali r29p0 (no 64-bit r29 blob exists for the 7870), CPU 1924 MHz (resets under load even at 1.25 V: power-delivery limit), Clang-built kernel (WIP).
+
+UI benchmark (Performance profile):
+
+| | stock-ish baseline | OC2 / k22 | OC3 |
+|---|---|---|---|
+| launcher jank | 8.95 % | ~6 % | 5.4-6.2 % |
+| launcher p99 | 46 ms | 40 ms | 38-40 ms |
+| notification shade p50 / p99 | - / 105 ms | 28 / 48-61 ms | 22-28 / 46-61 ms |
+| Settings cold start | ~940 ms | ~750 ms | ~706-730 ms |
+| Settings warm start | | | ~70 ms |
+
+**Flashing:** same as OC2 (TWRP, see [Install](#install)). A wipe is recommended when coming from non-OC builds; a dirty flash over OC2 is fine.
+Re-flash Magisk afterwards if you use it.
+
 ## OC2 (2026-11-14): kernel rebase + deep tuning, benchmarked
 
 **Kernel now based on samsungexynos7870 `lineage-22.2`** (commit `b7d1df08`, +1,243 commits over lineage-20), with this ROM's patches on top
