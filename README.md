@@ -8,6 +8,56 @@ CPU/GPU overclock, a built-in **Performance** app and a long list of hardware fi
 > Also for this tablet: **[postmarketOS port](https://github.com/ttabouch12/postmarketOS-Galaxy-Tab-Active2-SM-T395)** (mainline Linux, experimental).
 > Stock firmware to go back: [SamFw](https://samfw.com/firmware/SM-T395) (flash with Odin).
 
+## OC4 (2026-11-15) — driver-level tuning + 68 Hz panel
+
+### Display
+- Panel overclocked 60 -> 68 Hz (DT timing, `refresh = 68`, pixel clock 69 -> 78 MHz).
+- DSI link unchanged: 500 MHz x 4 lanes.
+- Tested: 63/66 Hz clean but worse frame pacing; 70 Hz small artifacts on the test unit; 75 Hz distorted. 68 Hz is the sweet spot.
+
+### GPU (Mali-T830)
+- Wake/start clock 343 -> 545 MHz.
+- Shader power-off hysteresis: `pm_poweroff = "400000 25 25"`, so cores don't power-cycle between frames.
+- JS scheduling period 50 -> 25 ms; context scheduling mode 1.
+
+### HWC
+- `debug.hwc.skip_dma_types` `0,2` -> `2`. Frees one more hardware overlay; the status bar is now composed by display hardware.
+
+### CPU
+- Interactive governor `timer_rate` 20 -> 10 ms on both clusters.
+
+### Memory / storage
+- `extra_free_kbytes` = 24000.
+- eMMC `clkgate_delay` 10 -> 100.
+
+### Compatibility
+- Removed false Vulkan 1.1 feature declarations. No Vulkan driver exists for Mali-T830 r28 on this device; apps no longer try Vulkan and fall back to GLES.
+
+### Investigated, not used
+- Memory bus: already at 902 MHz max during UI.
+- HWUI partial redraw / SF layer caching: slower.
+- EAS / LTO: low gain.
+
+### Benchmarks
+Same automated test. OC3 = 60 Hz, OC4 = 68 Hz.
+
+| Metric | OC3 | OC4 |
+|---|---|---|
+| Launcher jank | 6.2% | 2.3% |
+| Launcher p50 frame time | 22 ms | 15 ms |
+| Launcher frames delivered in test | 514 | 574 (+12%) |
+| Settings jank | 2.1% | 0.75% |
+| Notification shade jank | 15% | 8.9% |
+| Settings cold start | ~720–740 ms | ~720–740 ms (unchanged) |
+| Settings warm start | — | ~65–75 ms |
+
+> **Note:** if your panel shows artifacts at 68 Hz, flash the OC3 boot image or report it.
+
+### Flashing
+- Zip: `lineage-20.0-20261115-gtactive2lte-OC4.zip`
+- Flash in TWRP. Dirty flash over OC3/OC2 is OK.
+- Re-flash Magisk afterwards if you use it.
+
 ## OC3 (2026-11-14): kernel build + scheduler/memory tuning, benchmarked
 
 Zip: `lineage-20.0-20261114-gtactive2lte-OC3.zip` (release tag `v20.0-oc3-20261114`).
