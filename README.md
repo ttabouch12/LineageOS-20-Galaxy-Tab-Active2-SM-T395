@@ -3,10 +3,46 @@
 Unofficial LineageOS 20 for `gtactive2lte`, tuned for speed on the Exynos 7870, with a tested
 CPU/GPU overclock, a built-in **Performance** app and a long list of hardware fixes.
 
-**Download:** see [Releases](../../releases) → latest `lineage-20.0-20261114-gtactive2lte-OC2.zip` (+ `.md5sum`).
+**Download:** see [Releases](../../releases) → latest `lineage-20.0-20261116-gtactive2lte-OC5.zip` (+ `.md5sum`).
 
 > Also for this tablet: **[postmarketOS port](https://github.com/ttabouch12/postmarketOS-Galaxy-Tab-Active2-SM-T395)** (mainline Linux, experimental).
 > Stock firmware to go back: [SamFw](https://samfw.com/firmware/SM-T395) (flash with Odin).
+
+## OC5 (2026-11-16) — kernel, scheduler and toolchain deep-tune
+
+**Results vs OC4** (same automated test: launcher/Settings/shade gfxinfo + TikTok 12-swipe feed):
+
+| Metric | Base ROM | OC4 | OC5 |
+|---|---|---|---|
+| Launcher jank | 8.95% | 2.3% | 2.3–2.7% |
+| Notification shade jank | 20.2% | 8.9% | 5.1–6.0% |
+| Settings cold start | ~856 ms | ~729 ms | ~705–720 ms |
+| TikTok feed jank | – | 33% | 21–24% |
+| TikTok frame p90 / p99 | – | 109 / 400 ms | 57–65 / 125–150 ms |
+| TikTok cold start (warm cache) | – | 2.49 s | 1.24–1.40 s |
+
+### Kernel (k22e)
+- `-mcpu=cortex-a53`; `SCHED_DEBUG`, audit syscall hooks, SELinux AVC stats, `KALLSYMS_ALL`, `BUGVERBOSE` off (scheduler values hard-coded to Android's 10/3/2 ms); AVC cache 512 -> 2048; stack protector regular; RCU callbacks offloaded (NOCB) and pinned to CPUs 1–3; ARMv8 GHASH crypto on.
+- GPU no longer forces CPU min 1586 MHz when GPU ≥ 1001 MHz (from AEON/Phantom 7870 kernels). This removes simultaneous CPU+GPU peak current and makes **1794 MHz stable under full 8-core + GPU load** (falls back to 1690 MHz at ~76 °C).
+- Interactive governor patches (scale early, ignore ≤5% load, hispeed delay on target freq); unbound workqueues on CPUs 1–3; grip-sensor debug poll 2 s -> 60 s; display trace markers skipped when not tracing.
+- Exynos-snapshot event logging disabled at boot.
+
+### System
+- SurfaceFlinger moved from the background cpuset to top-app with real-time FIFO priority; GPU/display/audio IRQs moved off CPU0; `mmcqd`/`rcuo` on CPUs 1–3.
+- Fixed CPU cap: profile default now 1794 MHz; touch boost 1690 MHz, launch boost 1794 MHz on both clusters.
+- Apps compiled automatically: `dex2oat64`, install-time `speed`, and a boot service that compiles all user apps (`speed`, fallback `speed-profile`) every 6 h while charging.
+- jemalloc (no Scudo, no malloc zero-fill), platform-wide ThinLTO, system_server compiled `speed`.
+- ART launch prefetch capped to 8 MB; USAP pool 3; perfetto hprof off; INT bus floor 400 MHz; eMMC queue tuning (`iostats=0`, `add_random=0`, `nr_requests=256`, `rq_affinity=2`); swappiness 100; Wi-Fi/BLE always-scan off; animations 0.5×; colour management/HDR paths off; camera not pinned.
+
+### Investigated, not used
+- CPU 1924/2002 MHz (power IC current limit), GPU > 1300 MHz (no ECT levels), Mali r29 (no 64-bit blob for 7870), memory bus > 902 MHz (bootloader table), EAS/MGLRU (not feasible on 3.18), cached-app freezer (needs binder freeze), BFQ/ROW (not in tree), stack auto-zero removal (breaks host build tools).
+
+### Notes
+- `/data` is **not encrypted** on this ROM.
+- SELinux is permissive on the test unit only (boot script); the gain was small, so release builds keep the stock behaviour unless you change it.
+
+## Linux (Ubuntu Touch, Halium 13) — alpha
+**Ubuntu Touch 24.04 (Halium 13) port: alpha, boots to Lomiri with Wi-Fi, LTE/SIM, Bluetooth, stereo speakers, mic, sensors, USB networking.** See [`ubuntu-touch/`](ubuntu-touch/README.md) and the `v24.04-ut-gta2-alpha1` release. It reuses this ROM's vendor and OC kernel tree; Android is unaffected.
 
 ## OC4 (2026-11-15) — driver-level tuning + 68 Hz panel
 
