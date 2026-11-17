@@ -41,8 +41,12 @@ CPU/GPU overclock, a built-in **Performance** app and a long list of hardware fi
 - `/data` is **not encrypted** on this ROM.
 - SELinux is permissive on the test unit only (boot script); the gain was small, so release builds keep the stock behaviour unless you change it.
 
-## Linux (Ubuntu Touch, Halium 13) — alpha
-**Ubuntu Touch 24.04 (Halium 13) port: alpha, boots to Lomiri with Wi-Fi, LTE/SIM, Bluetooth, stereo speakers, mic, sensors, USB networking.** See [`ubuntu-touch/`](ubuntu-touch/README.md) and the `v24.04-ut-gta2-alpha1` release. It reuses this ROM's vendor and OC kernel tree; Android is unaffected.
+## Linux (Ubuntu)
+Ubuntu builds for this tablet now live in their own repo: **[Ubuntu for the Galaxy Tab Active2](https://github.com/ttabouch12/Ubuntu-Galaxy-Tab-Active2-SM-T395)**
+* **Ubuntu Server Mini**: native Ubuntu 24.04 without Android, ~240 MB RAM, SSH + Docker + Portainer, second screen for a laptop. One TWRP zip.
+* **Ubuntu Touch 24.04** (alpha): Lomiri on Halium 13.
+
+Both need this ROM installed once (they reuse its vendor partition), and flashing this ROM again is the way back to Android.
 
 ## OC4 (2026-11-15) — driver-level tuning + 68 Hz panel
 
